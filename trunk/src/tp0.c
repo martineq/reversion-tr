@@ -10,34 +10,9 @@ typedef struct cadena{
 
 }tCadena;
 
+//prueba de uso de svn
+//char* leerEntrada();
 
-char* leerEntrada(){
-	char* aux;
-	char* str1dato;
-	int fin = 0;
-	int objetosleidos = 0;
-	int tamanio = TAMANIO_BUFFER;
-
-	str1dato=malloc(sizeof(char)*tamanio);
-	aux = malloc(sizeof(char)*tamanio);
-
-	while(!fin){
-
-		objetosleidos=fread(aux,sizeof(char),TAMANIO_BUFFER,stdin);
-		aux[objetosleidos]='\0';
-
-		if (TAMANIO_BUFFER > objetosleidos)
-			fin = !fin;
-		else
-			tamanio += TAMANIO_BUFFER;
-
-		str1dato = realloc(str1dato,tamanio);
-		strcat(str1dato,aux);
-	}
-
-	free(aux);
-	return str1dato;
-}
 int contarCaracteres(char* entrada,char caracteresBuscados){ 
 	int contador = 0;
 	int w;
@@ -290,7 +265,9 @@ int main(int argc,char** argv){
 		printf("Versión 0.0000001\n");
 		return 0;
 	} 
-    str1.dato = leerEntrada();
+
+			//
+			//str1.dato = leerEntrada();
 
     guardarEntradas(argc, argv, &string1, &string2);
 
