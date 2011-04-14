@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> //Para el getopt
+#include <ctype.h> //Para el getopt
+#include <getopt.h>
 
 #define TAMANIO_BUFFER 3
+
+// Esta estructura ya quedó obsoleta
 
 typedef struct cadena{
        char* dato;
@@ -10,69 +15,6 @@ typedef struct cadena{
 
 }tCadena;
 
-int main(int argc,char** argv){
-
-    tCadena str1;
-
-    char* string1 = NULL; //para guardar la primera entrada pasada por parametro.
-    char* string2 = NULL; //para guardar la segunda entrada pasada por parametro.
-
-    char* msgerr;
-
-    //indicadores de las entradas validas
-    char* flag[] = {"-V","--version","-h","--help","-s","--squeeze","--delete","-d","-sd","-ds"};
-
-	//para ver los mensajes de ayuda/version
-	if ((argv[1][0] == '-') && (argv[1][1] == 'h')){
-		imprimirMensajeDeAyudaSegunEntrada();
-		return 0;
-	}
-	if ((argv[1][0] == '-') && (argv[1][1] == 'V')){
-		printf("Versión 0.0000001\n");
-		return 0;
-	}
-    str1.dato = leerEntrada();
-
-    guardarEntradas(argc, argv, &string1, &string2);
-
-    // Inicialar flags
-    str1.V=str1.H=str1.S=str1.D=str1.err=0;
-    definirFlagsSegunEntradas(argc, argv, flag, &str1);
-    procesarEntradas(string1, string2, &str1);
-
-    procesarErrores(str1, &msgerr);
-
-    free(str1.dato);
-    return 0;
-}
-
-char* leerEntrada(){
-	char* aux;
-	char* str1dato;
-	int fin = 0;
-	int objetosleidos = 0;
-	int tamanio = TAMANIO_BUFFER;
-
-	str1dato=malloc(sizeof(char)*tamanio);
-	aux = malloc(sizeof(char)*tamanio);
-
-	while(!fin){
-
-		objetosleidos=fread(aux,sizeof(char),TAMANIO_BUFFER,stdin);
-		aux[objetosleidos]='\0';
-
-		if (TAMANIO_BUFFER > objetosleidos)
-			fin = !fin;
-		else
-			tamanio += TAMANIO_BUFFER;
-
-		str1dato = realloc(str1dato,tamanio);
-		strcat(str1dato,aux);
-	}
-
-	free(aux);
-	return str1dato;
-}
 
 int contarCaracteres(char* entrada,char caracteresBuscados){
 	int contador = 0;
@@ -185,65 +127,6 @@ void traducir(char** dato,char* string1,char* string2){
 		free(aux);
 }
 
-//crea dos punteros a los string de las entradas pasadas por parametro
-void guardarEntradas(int argc, char** argv, char** string1, char** string2){
-	int p = 1;
-    while (p < argc){
-    	if ( *argv[p] != '-' ){
-    		if (*string1 == NULL) *string1 = argv[p];
-    		else if (*string2 == NULL) *string2 = argv[p];
-    	}
-    	p++;
-    }
- }
-
-void definirFlagsSegunEntradas(int argc, char** argv, char** flag, tCadena* str1){
-    int i;
-    //bandera: para salir de los ciclos, suponiendo que el formato estandar
-    //que se tiene que leer de linea de comando es del estilo:
-    // tp0 [options] string1 string2. mejora un poco la eficiencia
-    int bandera = 0;
-    for (i=1;i<argc && (bandera!=1);i++){
-        int j;
-        for (j=0;j<10 && (bandera!=1);j++){
-            if ( strcmp(argv[i],flag[j])==0 )
-            switch ( j ) {
-                case 0:
-                case 1:
-						(*str1).V=1;
-						bandera = 1;
-						break;
-                case 2:
-                case 3:
-						(*str1).H=1;
-						bandera = 1;
-						break;
-                case 4:
-                case 5:
-						(*str1).S=1;
-						bandera = 1;
-						break;
-
-                case 6:
-                case 7:
-						(*str1).D=1;
-						bandera = 1;
-						break;
-                case 8:
-                case 9:
-						(*str1).S=1;
-						(*str1).D=1;
-						bandera = 1;
-						break;
-                default:
-						(*str1).err=1;
-						bandera = 1;
-						break;
-                }
-        }
-    }
-}
-
 void imprimirMensajeDeAyudaSegunEntrada(){
 		printf("Usage:\n\ttp0 -h\n\ttp0 -V\n\ttp0 [options] string1 string2\n\ttp0 [options] string1\nOptions:\n\t-V, --version\tPrint version and quit.\n\t-h, --help\tPrint this information and quit.\n\t-d, --delete\tDelete characters in string1\n\t-s, --squeeze\tSqueeze characters in input.\n");
 	}
@@ -304,4 +187,150 @@ void procesarErrores(tCadena str1, char** msgerr){
 	fwrite(*msgerr, sizeof(char),strlen(*msgerr),stderr);//Si existió algún error, sale el mensaje por stderr
     }else
     	fwrite(str1.dato, sizeof(char),strlen(str1.dato),stdout);
+}
+
+void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s){
+
+static int ver,hlp,del,squ;
+int c;
+
+       while (1)
+         {
+           static struct option long_options[] =
+             {
+               /* These options set a flag. */
+               {"version", no_argument, &ver, 1},
+               {"help",   no_argument, &hlp, 1},
+               {"delete",  no_argument, &del, 1},
+               {"squeeze", no_argument, &squ, 1},
+               {0, 0, 0, 0}
+             };
+           /* getopt_long stores the option index here. */
+           int option_index = 0;
+
+           c = getopt_long (argc, argv, "Vhds",
+                            long_options, &option_index);
+
+           /* Detect the end of the options. */
+           if (c == -1)
+             break;
+
+           switch (c)
+             {
+             case 0:
+               // Si esta opción setea un flag acá no se hace nada.
+               // En nuestro caso todas las opciones setean flag, así que no hago nada
+                break;
+
+             case 'V':
+               ver=1;
+               break;
+
+             case 'h':
+               hlp=1;
+               break;
+
+             case 'd':
+               del=1;
+               break;
+
+             case 's':
+               squ=1;
+               break;
+
+            case '?':
+              /* getopt_long ya imprime mensaje de error. */
+               break;
+
+             default:
+               abort ();
+             }
+         }
+
+        if (optind < argc){
+           int i=1;
+           while (optind < argc){
+             if ( i==1 ){
+             (*str1) = (argv[optind]);
+             optind++;
+             }else{
+                if ( i==2 ){
+                (*str2)=(argv[optind]);
+                optind++;
+                }else{
+                    fprintf(stderr,"Parámetro '%s' inválido, no procesado\n", argv[optind++]);
+                }
+             }
+            i++;
+           }
+         }
+
+    if( (*str1)==NULL ){
+        fprintf(stderr,"Falta un operando\n");
+        abort();
+    }else if ( (*str2)==NULL ){
+        fprintf (stderr,"Falta un operando después de '%s'\n",(*str1));
+        abort();
+    }
+
+    *v=ver;
+    *h=hlp;
+    *d=del;
+    *s=squ;
+}
+
+
+int main(int argc,char** argv){
+
+    ///Las variables que guardan datos provenientes de los parámetros son solo seis
+    int ver,hlp,del,squ; // Son los 4 posibles flags: 0-> Falso ; 1-> Verdadero
+    char* string1 = NULL;
+    char* string2 = NULL;
+
+    /// Esta función se encarga se setear todos los flags, los str (si existen)
+    /// y además valida todos los casos (de parámetros) que no sean válidos.
+    /// Contempla los 4 casos cortos y los 4 casos largos
+    /// Toma como máximo 2 strings (los 2 primeros que encuentre), si no hay strings o hay solo uno, envia error y termina el programa,
+    /// y si (por error del usuario) existieran mas, los ignora advirtiendo que no serán procesados
+    cargaParametros(argc,argv,&string1,&string2,&ver,&hlp,&del,&squ);
+
+    //Con estas líneas pueden ver los resultados del proceso de carga de parámetros y a partir de aquí empieza la lógica del programa
+    // SOLO PARA VERIFICACIÓN >>> AL FINAL HAY QUE BORRARLAS
+    printf ("\nResultados del proceso:\nVflag = %d, hflag = %d, dflag = %d, sflag = %d\n",ver,hlp,del,squ);
+    printf ("str1: [%s]\n", string1);
+    printf ("str2: [%s]\n", string2);
+
+    //Si pidió ayuda, la muestro y salgo del programa.
+    if(hlp){
+        imprimirMensajeDeAyudaSegunEntrada();
+        return 0;
+    }
+
+    //Si pidió información sobre la versión, la muestro y salgo del programa.
+    if(ver){
+        printf("Versión 0.2\n");
+		return 0;
+    }
+
+    /// Acá empieza toda la lógica del programa, tomando los caracteres del stdin
+    // Básicamente tiene que procesar el stdin, tomando en cuenta los flags "del" (para el delete) y "squ" (para el squeeze)
+    // Ahora debemos tomar de a UN SOLO CARACTER del stdin
+    // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
+
+    if( (del==1) && (squ==1) ){
+        printf("\nDelete y Squeeze\n");
+    }
+
+    if( (del==1) && (squ==0) ){
+        printf("\nDelete\n");
+    }
+
+    if( (del==0) && (squ==1) ){
+        printf("\nSqueeze\n");
+    }
+
+    printf("\nTraducción con los strings\n");
+
+
+  return 0;
 }
