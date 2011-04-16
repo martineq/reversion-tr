@@ -176,10 +176,10 @@ void procesarErrores(tCadena str1, char** msgerr){
                 *msgerr="Error de lectura de entrada\n";
                 break;
             case 3:
-                *msgerr="Error squeezzing and deleting, se necesitan dos strings\n";
+                *msgerr="Error en función 'squeeze' y 'delete', se necesitan dos operandos\n";
                 break;
             case 4:
-                *msgerr="Error en deleting, sólo se admite un string\n";
+                *msgerr="Error en función 'delete', sólo se admite un operando\n";
                 break;
             default:
                 break;
@@ -192,11 +192,10 @@ void procesarErrores(tCadena str1, char** msgerr){
 void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s){
 
 static int ver,hlp,del,squ;
-int c;
-
+       int c; //Variable para uso interno del getopt_long
        while (1)
          {
-           static struct option long_options[] =
+           static struct option long_options[] =    //Variable para uso interno del getopt_long
              {
                /* These options set a flag. */
                {"version", no_argument, &ver, 1},
@@ -205,13 +204,11 @@ int c;
                {"squeeze", no_argument, &squ, 1},
                {0, 0, 0, 0}
              };
-           /* getopt_long stores the option index here. */
            int option_index = 0;
 
            c = getopt_long (argc, argv, "Vhds",
                             long_options, &option_index);
 
-           /* Detect the end of the options. */
            if (c == -1)
              break;
 
@@ -239,7 +236,9 @@ int c;
                break;
 
             case '?':
-              /* getopt_long ya imprime mensaje de error. */
+              /* getopt_long ya imprime mensaje de error automáticamente. */
+               fprintf(stderr,"Parámetro inválido\nPruebe '--help' para obtener más información.\n");
+               abort ();
                break;
 
              default:
@@ -265,12 +264,29 @@ int c;
            }
          }
 
-    if( (*str1)==NULL ){
-        fprintf(stderr,"Falta un operando\n");
-        abort();
-    }else if ( (*str2)==NULL ){
-        fprintf (stderr,"Falta un operando después de '%s'\n",(*str1));
-        abort();
+    if ( (hlp==0 && ver==0) ){  //Cuando no pide ni ayuda ni versión, valido los strings
+
+        // Caso: sin argumentos
+        if( (*str1)==NULL && (*str2)==NULL ){
+            fprintf(stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
+            abort();
+        }
+
+        // Caso: con un argumento
+        if( (*str1)!=NULL && (*str2)==NULL ){
+            if( (del==1 && squ==1) || (del==0 && squ==0 ) ){
+                fprintf (stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
+                abort();
+            }
+        }
+
+        // Caso: con los dos argumentos
+        if( (*str1)!=NULL && (*str2)!=NULL ){
+            if( del==1 && squ==0 ){
+                fprintf (stderr,"Operando extra '%s'\nPruebe '--help' para obtener más información.\n",(*str2));
+                abort();
+            }
+        }
     }
 
     *v=ver;
@@ -296,17 +312,17 @@ int main(int argc,char** argv){
 
     //Con estas líneas pueden ver los resultados del proceso de carga de parámetros y a partir de aquí empieza la lógica del programa
     // SOLO PARA VERIFICACIÓN >>> AL FINAL HAY QUE BORRARLAS
-    printf ("\nResultados del proceso:\nVflag = %d, hflag = %d, dflag = %d, sflag = %d\n",ver,hlp,del,squ);
+    printf ("Parámetros validados.\nResultados del proceso:\nVflag = %d, hflag = %d, dflag = %d, sflag = %d\n",ver,hlp,del,squ);
     printf ("str1: [%s]\n", string1);
     printf ("str2: [%s]\n", string2);
 
-    //Si pidió ayuda, la muestro y salgo del programa.
+    //Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
     if(hlp){
         imprimirMensajeDeAyudaSegunEntrada();
         return 0;
     }
 
-    //Si pidió información sobre la versión, la muestro y salgo del programa.
+    //Si pidió información sobre la versión, la muestro y salgo del programa. No hace falta nada mas.
     if(ver){
         printf("Versión 0.2\n");
 		return 0;
@@ -329,7 +345,7 @@ int main(int argc,char** argv){
         printf("\nSqueeze\n");
     }
 
-    printf("\nTraducción con los strings\n");
+    printf("\nTraducción...\n");
 
 
   return 0;
