@@ -5,17 +5,6 @@
 #include <ctype.h> //Para el getopt
 #include <getopt.h>
 
-#define TAMANIO_BUFFER 3
-
-// Esta estructura ya quedó obsoleta
-
-typedef struct cadena{
-       char* dato;
-       int V,H,S,D,err;
-
-}tCadena;
-
-
 int contarCaracteres(char* entrada,char caracteresBuscados){
 	int contador = 0;
 	int w;
@@ -57,118 +46,13 @@ char* reemplazarCaracteres(char* entrada,char caracterAreemplazar,char reemplazo
 		return entradaReemplazada;
 }
 
-// Extiende la longitud del string2 a la del string1 copiando el último caracter.
-void traducir(char** dato,char* string1,char* string2){
-	char* aux=string2;
-	if( strlen(string1) > strlen(string2) ){
-		aux = malloc(sizeof(char)*strlen(string1));
-		int l;
-		for(l=0 ; l<strlen(string2) ; l++)
-			*(aux+l)=*(string2+l);
-		int f;
-		for(f=l ; f<strlen(string1) ; f++)
-			*(aux+f)=*(string2+l-1);
-		*(aux+strlen(string1))='\0';
-	}
-
-	char* aTraducir = malloc(sizeof(char)*strlen(string1));
-	char* traductores = malloc(sizeof(char)*strlen(aux));
-
-	*aTraducir= '\0';
-	*traductores = '\0';
-
-	int a;
-	int b;
-	int c;
-	int posicionNueva;
-	int caracterRepetido;
-	int posicionChar;
-	char caracterAuxiliar;
-
-	posicionNueva = 0;
-	for(a=0;a<strlen(string1);a++){
-		posicionChar = a;
-		caracterAuxiliar = *(string1+a);
-
-		//verifica si ya salió anteriormente
-		caracterRepetido=0;
-		c=0;
-		while(c<a && caracterRepetido==0){
-			if (caracterAuxiliar == *(aTraducir+c))
-				caracterRepetido=1;
-			c++;
-		}
-
-		if (caracterRepetido == 0){
-		//busca la última posición del caracter leído
-		for(b=a+1;b<strlen(string1);b++){
-			if (caracterAuxiliar == *(string1+b)){
-				posicionChar = b;
-			}
-		}
-
-		*(aTraducir+posicionNueva)=caracterAuxiliar;
-		*(traductores+posicionNueva)=*(aux+posicionChar);
-		posicionNueva+=1;
-		*(aTraducir+posicionNueva)='\0';
-		*(traductores+posicionNueva)='\0';
-
-
-		}
-	}
-
-	int index;
-	for (index = 0; index < strlen(aTraducir);index++ ){
-		*dato = reemplazarCaracteres(*dato,*(aTraducir+index),*(traductores+index));
-}
-	free(aTraducir);
-	free(traductores);
-	if (strlen(aux)!=strlen(string2))
-		free(aux);
-}
-
 void imprimirMensajeDeAyudaSegunEntrada(){
 		printf("Usage:\n\ttp0 -h\n\ttp0 -V\n\ttp0 [options] string1 string2\n\ttp0 [options] string1\nOptions:\n\t-V, --version\tPrint version and quit.\n\t-h, --help\tPrint this information and quit.\n\t-d, --delete\tDelete characters in string1\n\t-s, --squeeze\tSqueeze characters in input.\n");
 	}
 
-void procesarEntradas(char* string1, char* string2, tCadena* str1){
-	int r;
-	if ( (*str1).D==1){
-
-    	for (r = 0 ; r < strlen(string1) ; r++ )
-    	 	(*str1).dato = borrarCaracteres((*str1).dato,*(string1+r),0);
-
-       	if ((*str1).S==1){
-        		if (string2!=NULL){
-            		for (r = 0; r < strlen(string2);r++ )
-            			(*str1).dato = borrarCaracteres((*str1).dato,*(string2+r),1);
-    	        	}else{
-    	        		(*str1).err=3;
-    	        	}
-    	    }else if (string2!=NULL){
-    	       	(*str1).err=4;
-    	}
-    }else if ( (*str1).S==1 ){
-    	if (string2==NULL){
-    		int r;
-    		for (r = 0; r < strlen(string1);r++ )
-    			(*str1).dato = borrarCaracteres((*str1).dato,*(string1+r),1);
-    	}else{
-    		traducir(&((*str1).dato),string1,string2);
-     		int r;
-     		for (r = 0; r < strlen(string2);r++ )
-    		   	(*str1).dato = borrarCaracteres((*str1).dato,*(string2+r),1);
-    	}
-    }else if (string1!=NULL && string2!=NULL){
-    	traducir(&((*str1).dato),string1,string2);
-		for (r = 0; r < strlen(string1);r++ )
-		    reemplazarCaracteres((*str1).dato,*(string1+r),*(string2+r));
-	}
-}
-
-void procesarErrores(tCadena str1, char** msgerr){
-	  if (str1.err!=0) {  //Chequea si existen errores
-        switch ( str1.err ) {
+void procesarErrores(int error, char** msgerr){
+	  if (error!=0) {  //Chequea si existen errores
+        switch ( error ) {
             case 1:
                 *msgerr="Error de parámetro\n";
                 break;
@@ -185,8 +69,9 @@ void procesarErrores(tCadena str1, char** msgerr){
                 break;
          }
 	fwrite(*msgerr, sizeof(char),strlen(*msgerr),stderr);//Si existió algún error, sale el mensaje por stderr
-    }else
-    	fwrite(str1.dato, sizeof(char),strlen(str1.dato),stdout);
+    }
+	  //else
+    	//fwrite(, sizeof(char),strlen(str1.dato),stdout);
 }
 
 void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s){
@@ -295,7 +180,6 @@ static int ver,hlp,del,squ;
     *s=squ;
 }
 
-
 int main(int argc,char** argv){
 
     ///Las variables que guardan datos provenientes de los parámetros son solo seis
@@ -316,37 +200,93 @@ int main(int argc,char** argv){
     printf ("str1: [%s]\n", string1);
     printf ("str2: [%s]\n", string2);
 
-    //Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
-    if(hlp){
-        imprimirMensajeDeAyudaSegunEntrada();
-        return 0;
+    printf("\n\n >> Comienzo de traducción\n\n");
+
+    char* entradaVECTOR="holaaa mundo!";
+    char entrada;
+    int w;
+    char caracterAnterior='\0';
+    int long_string1;
+    int long_string2;
+    if(string1 == NULL)
+    	long_string1 = 0;
+    else
+    	long_string1 = strlen(string1);
+
+    if(string2 == NULL)
+    	long_string2 = 0;
+    else
+    	long_string2 = strlen(string2);
+
+	int long_entradaVECTOR = strlen(entradaVECTOR);
+    for (w=0;w<long_entradaVECTOR;w++){
+
+    	entrada = entradaVECTOR[w];
+    	int j;
+
+    	//Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
+        if(hlp){
+            imprimirMensajeDeAyudaSegunEntrada();
+        }
+
+        //Si pidió información sobre la versión, la muestro y salgo del programa. No hace falta nada mas.
+        if(ver){
+            printf("Versión 0.2\n");
+        }
+
+        /// Acá empieza toda la lógica del programa, tomando los caracteres del stdin
+        // Básicamente tiene que procesar el stdin, tomando en cuenta los flags "del" (para el delete) y "squ" (para el squeeze)
+        // Ahora debemos tomar de a UN SOLO CARACTER del stdin
+        // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
+
+        if( (del==1) && (squ==1)){			//squeeze y delete
+            printf("\nDelete y Squeeze\n");
+
+    	    }
+
+        if (string1!=NULL && string2!=NULL){				//inicia la traducción
+
+        	//antes hay que extender el string2 al tamaño del string1
+        	j = 0;
+        	while(j<long_string1){
+        		if(entrada == *(string1+j)){
+        			putchar(*(string2+j));
+        			j = long_string1+1;
+        		}
+        		j++;
+        	}
+
+        	if( j == long_string1 )
+        		putchar(entrada);
+        }
+
+    	if( (del==1) && (squ==0) ){
+    		j = 0;
+    		while(j<long_string1){
+    			if(entrada == *(string1+j)){
+    				j = long_string1+1;
+    			}
+    			j++;
+    		}
+    		if( j == long_string1 )
+    			putchar(entrada);
+    	}
+
+    	if( (del==0) && (squ==1)){
+    		j = 0;
+    		while(j<long_string1){
+    			if(caracterAnterior == *(string1+j)){
+    				j = long_string1+1;
+    			}
+    			j++;
+    		}
+    		caracterAnterior = entrada;
+
+    		if( j == long_string1 )
+    			putchar(entrada);
+    	}
     }
 
-    //Si pidió información sobre la versión, la muestro y salgo del programa. No hace falta nada mas.
-    if(ver){
-        printf("Versión 0.2\n");
-		return 0;
-    }
-
-    /// Acá empieza toda la lógica del programa, tomando los caracteres del stdin
-    // Básicamente tiene que procesar el stdin, tomando en cuenta los flags "del" (para el delete) y "squ" (para el squeeze)
-    // Ahora debemos tomar de a UN SOLO CARACTER del stdin
-    // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
-
-    if( (del==1) && (squ==1) ){
-        printf("\nDelete y Squeeze\n");
-    }
-
-    if( (del==1) && (squ==0) ){
-        printf("\nDelete\n");
-    }
-
-    if( (del==0) && (squ==1) ){
-        printf("\nSqueeze\n");
-    }
-
-    printf("\nTraducción...\n");
-
-
-  return 0;
+    printf("\n\n%s","*******  FIN  *******");
+    return 0;
 }
