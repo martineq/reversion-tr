@@ -240,11 +240,27 @@ int main(int argc,char** argv){
         // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
 
         if( (del==1) && (squ==1)){			//squeeze y delete
-            printf("\nDelete y Squeeze\n");
+    		j = 0;
+        	while( j<long_string1 ){
+        		if( entrada == *(string1+j) )
+        			j = long_string1+1;
+        		j++;
+        	}
 
-    	    }
+        	int p = 0;
+    		while( p<long_string2 ){
+    			if( entrada == *(string2+p) )
+    				if( caracterAnterior == *(string2+p) )
+    					p = long_string2+1;
+    			p++;
+    		}
+    		caracterAnterior = entrada;
 
-        if (string1!=NULL && string2!=NULL){				//inicia la traducción
+    		if( j == long_string1 && p == long_string2)
+        		putchar(entrada);
+        }
+
+        if (string1!=NULL && string2!=NULL && !(del==1 && squ==1)){				//inicia la traducción
 
         	//antes hay que extender el string2 al tamaño del string1
         	j = 0;
@@ -275,9 +291,9 @@ int main(int argc,char** argv){
     	if( (del==0) && (squ==1)){
     		j = 0;
     		while(j<long_string1){
-    			if(caracterAnterior == *(string1+j)){
-    				j = long_string1+1;
-    			}
+    			if(entrada == *(string1+j))
+    				if( caracterAnterior == *(string1+j))
+    					j = long_string1+1;
     			j++;
     		}
     		caracterAnterior = entrada;
