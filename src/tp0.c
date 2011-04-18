@@ -5,76 +5,11 @@
 #include <ctype.h> //Para el getopt
 #include <getopt.h>
 
-int contarCaracteres(char* entrada,char caracteresBuscados){
-	int contador = 0;
-	int w;
-	for(w=0;w<strlen(entrada);w++)
-		if(entrada[w]==caracteresBuscados)
-			contador++;
-	return contador;
-    }
-
-char* borrarCaracteres(char* entrada,char caracterAborrar,int squeeze){
-
-	int cont = contarCaracteres(entrada,caracterAborrar);
-	char* salida = malloc(sizeof(char) * ( (strlen(entrada) - cont) + 1 )); //sumo 1 para guardar '\0'
-	int w;
-    int b = 0;
-    for(w=0; w < strlen(entrada) ; w++){
-    	if(entrada[w]!=caracterAborrar){
-    		salida[b++]=entrada[w];
-    	}else if (squeeze == 1){
-    		if (w==0 || (w>0 && entrada[w-1]!=caracterAborrar ))
-    			salida[b++]=entrada[w];
-    	}
-	}
-    salida[b]='\0';
-	return salida;
-}
-
-//devuelve el caracter despues del reemplazo.
-char* reemplazarCaracteres(char* entrada,char caracterAreemplazar,char reemplazo){
-	int w;
-	char* entradaReemplazada = malloc(sizeof(char) * ( (strlen(entrada) + 1 )));
-	for(w=0; w < strlen(entrada); w++){
-		if (entrada[w] == caracterAreemplazar)
-			entradaReemplazada[w]=reemplazo;
-		if (entrada[w] != caracterAreemplazar)
-			entradaReemplazada[w] = entrada[w];
-	}
-        entradaReemplazada[strlen(entrada)]='\0';
-		return entradaReemplazada;
-}
-
 void imprimirMensajeDeAyudaSegunEntrada(){
 		printf("Usage:\n\ttp0 -h\n\ttp0 -V\n\ttp0 [options] string1 string2\n\ttp0 [options] string1\nOptions:\n\t-V, --version\tPrint version and quit.\n\t-h, --help\tPrint this information and quit.\n\t-d, --delete\tDelete characters in string1\n\t-s, --squeeze\tSqueeze characters in input.\n");
 	}
 
-void procesarErrores(int error, char** msgerr){
-	  if (error!=0) {  //Chequea si existen errores
-        switch ( error ) {
-            case 1:
-                *msgerr="Error de parámetro\n";
-                break;
-            case 2:
-                *msgerr="Error de lectura de entrada\n";
-                break;
-            case 3:
-                *msgerr="Error en función 'squeeze' y 'delete', se necesitan dos operandos\n";
-                break;
-            case 4:
-                *msgerr="Error en función 'delete', sólo se admite un operando\n";
-                break;
-            default:
-                break;
-         }
-	fwrite(*msgerr, sizeof(char),strlen(*msgerr),stderr);//Si existió algún error, sale el mensaje por stderr
-    }
-	  //else
-    	//fwrite(, sizeof(char),strlen(str1.dato),stdout);
-}
-
-void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s){
+void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s,int* tra){
 
 static int ver,hlp,del,squ;
        int c; //Variable para uso interno del getopt_long
@@ -149,30 +84,54 @@ static int ver,hlp,del,squ;
            }
          }
 
-    if ( (hlp==0 && ver==0) ){  //Cuando no pide ni ayuda ni versión, valido los strings
+        // Caso: argumentos incompatibles
+        if( hlp==1 &&  ver==1 ){
+        	fprintf(stderr,"Operandos incompatibles. Los argumentos de ayuda y versión se emplean sólos.\nPruebe '--help' para obtener más información.\n");
+        	abort();
+        }
 
-        // Caso: sin argumentos
-        if( (*str1)==NULL && (*str2)==NULL ){
-            fprintf(stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
+        // Caso: argumentos incompatibles
+        if( (hlp==1) && ( del==1 || squ ==1 || (*str1)!=NULL || (*str2)!=NULL) ){
+            fprintf(stderr,"Operandos incompatibles. El argumento de ayuda se emplea sólo.\nPruebe '--help' para obtener más información.\n");
             abort();
         }
 
-        // Caso: con un argumento
-        if( (*str1)!=NULL && (*str2)==NULL ){
-            if( (del==1 && squ==1) || (del==0 && squ==0 ) ){
-                fprintf (stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
-                abort();
-            }
+        // Caso: argumentos incompatibles
+        if( (ver==1) && ( del==1 || squ ==1 || (*str1)!=NULL || (*str2)!=NULL) ){
+        	fprintf(stderr,"Operandos incompatibles. El argumento de version se emplea sólo.\nPruebe '--help' para obtener más información.\n");
+        	abort();
         }
 
-        // Caso: con los dos argumentos
-        if( (*str1)!=NULL && (*str2)!=NULL ){
-            if( del==1 && squ==0 ){
-                fprintf (stderr,"Operando extra '%s'\nPruebe '--help' para obtener más información.\n",(*str2));
-                abort();
-            }
+        if ((hlp==0) && (ver==0)){
+
+        	// Caso: sin argumentos
+        	if( (*str1)==NULL && (*str2)==NULL){
+        		fprintf(stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
+        		abort();
+        	}
+
+        	// Caso: con un argumento
+        	if( (*str1)!=NULL && (*str2)==NULL ){
+        		if( (del==1 && squ==1) || (del==0 && squ==0 ) ){
+        			fprintf (stderr,"Falta un operando\nPruebe '--help' para obtener más información.\n");
+        			abort();
+        		}
+        	}
+
+        	// Caso: con los dos argumentos
+        	if( (*str1)!=NULL && (*str2)!=NULL ){
+        		if( del==1 && squ==0 ){
+        			fprintf (stderr,"Operando extra '%s'\nPruebe '--help' para obtener más información.\n",(*str2));
+        			abort();
+        		}
+        	}
         }
-    }
+
+    	// traducir elementos
+    	if((*str1)!=NULL && (*str2)!=NULL)
+    		*tra = 1;
+    	else
+    		*tra = 0;
 
     *v=ver;
     *h=hlp;
@@ -180,10 +139,68 @@ static int ver,hlp,del,squ;
     *s=squ;
 }
 
+void extenderString(char* string2,int longitud_string){
+		int longitud = longitud_string;
+    	int j = strlen(string2);
+    	char caracter = *(string2+j-1);
+    	while( j < longitud )
+    		*(string2+(j++)) = caracter;
+    	*(string2+j)='\0';
+}
+
+void squeezeArgumento(char* string1,char* string2){
+
+    int indiceA,indiceB,indiceC;
+    int posicionPivote;
+    int posicionReescritura;
+    int caracterRepetido;
+    char pivote;
+
+    posicionReescritura = 0;
+    for(indiceA=0;indiceA<strlen(string1);indiceA++){
+
+        pivote = *(string1+indiceA);
+
+        caracterRepetido = 0;
+        indiceC=0;
+        //busca si el caracter pivote ya había salido
+        while(indiceC < indiceA){
+        	if (pivote == *(string1+indiceC))
+        		caracterRepetido=1;
+        	indiceC++;
+        }
+
+        if (caracterRepetido == 0){
+        	posicionPivote = indiceA;
+            //busca la última posición del caracter leído
+            for( indiceB=indiceA+1 ; indiceB<strlen(string1) ; indiceB++ ){
+                    if (pivote == *(string1+indiceB)){
+                            posicionPivote = indiceB;
+                    }
+            }
+            *(string1+posicionReescritura)=*(string1+posicionPivote);
+            *(string2+posicionReescritura)=*(string2+posicionPivote);
+            posicionReescritura++;
+        }
+    }
+    *(string1+posicionReescritura)='\0';
+    *(string2+posicionReescritura)='\0';
+}
+
+void prepararStrings(char* string1,char* string2,int *long_string1,int *long_string2){
+	if (*long_string2 < *long_string1)
+		extenderString(string2,*long_string1);
+
+	*long_string1 = strlen(string1);
+	*long_string2 = strlen(string2);
+
+	squeezeArgumento(string1,string2);
+}
+
 int main(int argc,char** argv){
 
     ///Las variables que guardan datos provenientes de los parámetros son solo seis
-    int ver,hlp,del,squ; // Son los 4 posibles flags: 0-> Falso ; 1-> Verdadero
+    int ver,hlp,del,squ,tra; // Son los 4 posibles flags: 0-> Falso ; 1-> Verdadero
     char* string1 = NULL;
     char* string2 = NULL;
 
@@ -192,7 +209,7 @@ int main(int argc,char** argv){
     /// Contempla los 4 casos cortos y los 4 casos largos
     /// Toma como máximo 2 strings (los 2 primeros que encuentre), si no hay strings o hay solo uno, envia error y termina el programa,
     /// y si (por error del usuario) existieran mas, los ignora advirtiendo que no serán procesados
-    cargaParametros(argc,argv,&string1,&string2,&ver,&hlp,&del,&squ);
+    cargaParametros(argc,argv,&string1,&string2,&ver,&hlp,&del,&squ,&tra);
 
     //Con estas líneas pueden ver los resultados del proceso de carga de parámetros y a partir de aquí empieza la lógica del programa
     // SOLO PARA VERIFICACIÓN >>> AL FINAL HAY QUE BORRARLAS
@@ -200,107 +217,119 @@ int main(int argc,char** argv){
     printf ("str1: [%s]\n", string1);
     printf ("str2: [%s]\n", string2);
 
+	//Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
+    if(hlp){
+        imprimirMensajeDeAyudaSegunEntrada();
+    }
+
+    //Si pidió información sobre la versión, la muestro y salgo del programa. No hace falta nada mas.
+    if(ver){
+        printf("Versión 0.2\n");
+    }
+
+    if (hlp==0 && ver==0){
     printf("\n\n >> Comienzo de traducción\n\n");
 
-    char* entradaVECTOR="holaaa mundo!";
-    char entrada;
-    int w;
-    char caracterAnterior='\0';
-    int long_string1;
-    int long_string2;
-    if(string1 == NULL)
-    	long_string1 = 0;
-    else
+    char	entrada;
+    char 	caracterAnterior='\0';
+    int		habilitarSalida;
+
+    int long_string1 = 0;
+    int long_string2 = 0;
+
+    if(string1 != NULL)
     	long_string1 = strlen(string1);
 
-    if(string2 == NULL)
-    	long_string2 = 0;
-    else
+    if(string2 != NULL)
     	long_string2 = strlen(string2);
 
-	int long_entradaVECTOR = strlen(entradaVECTOR);
-    for (w=0;w<long_entradaVECTOR;w++){
+    while( ( entrada=getchar() )!= EOF ){
 
-    	entrada = entradaVECTOR[w];
     	int j;
-
-    	//Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
-        if(hlp){
-            imprimirMensajeDeAyudaSegunEntrada();
-        }
-
-        //Si pidió información sobre la versión, la muestro y salgo del programa. No hace falta nada mas.
-        if(ver){
-            printf("Versión 0.2\n");
-        }
+    	habilitarSalida = 1;
 
         /// Acá empieza toda la lógica del programa, tomando los caracteres del stdin
         // Básicamente tiene que procesar el stdin, tomando en cuenta los flags "del" (para el delete) y "squ" (para el squeeze)
         // Ahora debemos tomar de a UN SOLO CARACTER del stdin
         // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
-
         if( (del==1) && (squ==1)){			//squeeze y delete
+
+        	//borrar entradas
     		j = 0;
         	while( j<long_string1 ){
-        		if( entrada == *(string1+j) )
+        		if( entrada == *(string1+j) ){
+        			habilitarSalida = 0;
         			j = long_string1+1;
+        		}
         		j++;
         	}
 
         	int p = 0;
     		while( p<long_string2 ){
     			if( entrada == *(string2+p) )
-    				if( caracterAnterior == *(string2+p) )
+    				if( caracterAnterior == *(string2+p) ){
+    					habilitarSalida = 0;
     					p = long_string2+1;
+    				}
     			p++;
     		}
     		caracterAnterior = entrada;
-
-    		if( j == long_string1 && p == long_string2)
-        		putchar(entrada);
         }
 
-        if (string1!=NULL && string2!=NULL && !(del==1 && squ==1)){				//inicia la traducción
+        if (tra==1 && !(del==1 && squ==1)){
 
-        	//antes hay que extender el string2 al tamaño del string1
+        	char* auxString1 = malloc(sizeof(char)*long_string1);
+        	string1 = strcpy(auxString1,string1);
+
+        	char *auxString2 = malloc(sizeof(char)*long_string1);
+        	string2 = strcpy(auxString2,string2);
+
+        	prepararStrings(string1,string2,&long_string1,&long_string2);
+
         	j = 0;
         	while(j<long_string1){
         		if(entrada == *(string1+j)){
-        			putchar(*(string2+j));
+        			entrada =*(string2+j);
         			j = long_string1+1;
         		}
         		j++;
         	}
-
-        	if( j == long_string1 )
-        		putchar(entrada);
         }
 
     	if( (del==1) && (squ==0) ){
     		j = 0;
     		while(j<long_string1){
     			if(entrada == *(string1+j)){
+    				habilitarSalida = 0;
     				j = long_string1+1;
     			}
     			j++;
     		}
-    		if( j == long_string1 )
-    			putchar(entrada);
+
     	}
 
-    	if( (del==0) && (squ==1)){
+    	if( (del==0) && (squ==1) && (tra==0)){
     		j = 0;
     		while(j<long_string1){
     			if(entrada == *(string1+j))
-    				if( caracterAnterior == *(string1+j))
+    				if( caracterAnterior == *(string1+j)){
     					j = long_string1+1;
+    					habilitarSalida = 0;
+    				}
     			j++;
     		}
     		caracterAnterior = entrada;
-
-    		if( j == long_string1 )
-    			putchar(entrada);
     	}
+
+		if(habilitarSalida == 1)
+			putchar(entrada);
+    }
+
+    if(tra==1 && !(squ==1 && del==1)){
+    	free(string1);
+    	free(string2);
+    }
+
     }
 
     printf("\n\n%s","*******  FIN  *******");
