@@ -233,6 +233,7 @@ int main(int argc,char** argv){
     char	entrada;
     char 	caracterAnterior='\0';
     int		habilitarSalida;
+    int		traducir = 0;
 
     int long_string1 = 0;
     int long_string2 = 0;
@@ -242,6 +243,19 @@ int main(int argc,char** argv){
 
     if(string2 != NULL)
     	long_string2 = strlen(string2);
+
+    if (tra==1 && !(del==1 && squ==1)){
+    	traducir = 1;
+
+    	char* auxString1 = malloc(sizeof(char)*long_string1);
+    	string1 = strcpy(auxString1,string1);
+
+    	char *auxString2 = malloc(sizeof(char)*long_string1);
+    	string2 = strcpy(auxString2,string2);
+
+    	prepararStrings(string1,string2,&long_string1,&long_string2);
+    }
+
 
     while( ( entrada=getchar() )!= EOF ){
 
@@ -277,15 +291,6 @@ int main(int argc,char** argv){
         }
 
         if (tra==1 && !(del==1 && squ==1)){
-
-        	char* auxString1 = malloc(sizeof(char)*long_string1);
-        	string1 = strcpy(auxString1,string1);
-
-        	char *auxString2 = malloc(sizeof(char)*long_string1);
-        	string2 = strcpy(auxString2,string2);
-
-        	prepararStrings(string1,string2,&long_string1,&long_string2);
-
         	j = 0;
         	while(j<long_string1){
         		if(entrada == *(string1+j)){
@@ -308,11 +313,18 @@ int main(int argc,char** argv){
 
     	}
 
-    	if( (del==0) && (squ==1) && (tra==0)){
+    	if( (del==0) && (squ==1) ){
+    		char* stringAUX;
+
+    		if ( traducir == 0 )
+    			stringAUX = string1;
+    		else
+    			stringAUX = string2;
+
     		j = 0;
     		while(j<long_string1){
-    			if(entrada == *(string1+j))
-    				if( caracterAnterior == *(string1+j)){
+    			if(entrada == *(stringAUX+j))
+    				if( caracterAnterior == *(stringAUX+j)){
     					j = long_string1+1;
     					habilitarSalida = 0;
     				}
