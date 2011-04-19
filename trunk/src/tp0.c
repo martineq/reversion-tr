@@ -211,11 +211,6 @@ int main(int argc,char** argv){
     /// y si (por error del usuario) existieran mas, los ignora advirtiendo que no serán procesados
     cargaParametros(argc,argv,&string1,&string2,&ver,&hlp,&del,&squ,&tra);
 
-    //Con estas líneas pueden ver los resultados del proceso de carga de parámetros y a partir de aquí empieza la lógica del programa
-    // SOLO PARA VERIFICACIÓN >>> AL FINAL HAY QUE BORRARLAS
-    printf ("Parámetros validados.\nResultados del proceso:\nVflag = %d, hflag = %d, dflag = %d, sflag = %d\n",ver,hlp,del,squ);
-    printf ("str1: [%s]\n", string1);
-    printf ("str2: [%s]\n", string2);
 
 	//Si pidió ayuda, la muestro y salgo del programa. No hace falta nada mas.
     if(hlp){
@@ -228,10 +223,9 @@ int main(int argc,char** argv){
     }
 
     if (hlp==0 && ver==0){
-    printf("\n\n >> Comienzo de traducción\n\n");
 
     char	entrada;
-    char 	caracterAnterior='\0';
+    char	caracterAnteriorAlmacenado='\0';
     int		habilitarSalida;
     int		traducir = 0;
 
@@ -262,11 +256,8 @@ int main(int argc,char** argv){
     	int j;
     	habilitarSalida = 1;
 
-        /// Acá empieza toda la lógica del programa, tomando los caracteres del stdin
-        // Básicamente tiene que procesar el stdin, tomando en cuenta los flags "del" (para el delete) y "squ" (para el squeeze)
-        // Ahora debemos tomar de a UN SOLO CARACTER del stdin
-        // y como mucho guardarnos el caracter anterior en una variable aux, para procesar lo pedido.
-        if( (del==1) && (squ==1)){			//squeeze y delete
+        /// Acá empieza toda la lógica del programa
+        if( (del==1) && (squ==1)){
 
         	//borrar entradas
     		j = 0;
@@ -281,13 +272,12 @@ int main(int argc,char** argv){
         	int p = 0;
     		while( p<long_string2 ){
     			if( entrada == *(string2+p) )
-    				if( caracterAnterior == *(string2+p) ){
+    				if( caracterAnteriorAlmacenado == *(string2+p) ){
     					habilitarSalida = 0;
     					p = long_string2+1;
     				}
     			p++;
     		}
-    		caracterAnterior = entrada;
         }
 
         if (tra==1 && !(del==1 && squ==1)){
@@ -324,26 +314,25 @@ int main(int argc,char** argv){
     		j = 0;
     		while(j<long_string1){
     			if(entrada == *(stringAUX+j))
-    				if( caracterAnterior == *(stringAUX+j)){
+    				if( caracterAnteriorAlmacenado == *(stringAUX+j)){
     					j = long_string1+1;
     					habilitarSalida = 0;
     				}
     			j++;
     		}
-    		caracterAnterior = entrada;
     	}
 
-		if(habilitarSalida == 1)
+		if(habilitarSalida == 1){
+			caracterAnteriorAlmacenado = entrada;
 			putchar(entrada);
+		}
     }
 
     if(tra==1 && !(squ==1 && del==1)){
     	free(string1);
     	free(string2);
-    }
+    	}
 
     }
-
-    printf("\n\n%s","*******  FIN  *******");
     return 0;
 }
