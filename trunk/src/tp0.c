@@ -6,16 +6,21 @@
 #include <getopt.h>
 
 void imprimirMensajeDeAyudaSegunEntrada(){
-		printf("Usage:\n\ttp0 -h\n\ttp0 -V\n\ttp0 [options] string1 string2\n\ttp0 [options] string1\nOptions:\n\t-V, --version\tPrint version and quit.\n\t-h, --help\tPrint this information and quit.\n\t-d, --delete\tDelete characters in string1\n\t-s, --squeeze\tSqueeze characters in input.\n");
+	printf("Usage:\n\ttp0 -h\n\ttp0 -V\n\ttp0 [options] string1 string2\n");
+	printf("\ttp0 [options] string1\nOptions:\n\t-V, --version\tPrint version");
+	printf("and quit.\n\t-h, --help\tPrint this information and quit.\n\t-d, ");
+	printf("--delete\tDelete characters in string1\n\t-s, --squeeze\tSqueeze ");
+	printf("characters in input.\n");
 	}
 
 void cargaParametros(int argc,char** argv,char** str1,char** str2,int* v,int* h,int* d,int* s,int* tra){
 
 static int ver,hlp,del,squ;
-       int c; //Variable para uso interno del getopt_long
-       while (1)
-         {
-           static struct option long_options[] =    //Variable para uso interno del getopt_long
+int c; //Variable para uso interno del getopt_long
+	while (1)
+		{
+		//Variable para uso interno del getopt_long
+		static struct option long_options[] =    
              {
                /* These options set a flag. */
                {"version", no_argument, &ver, 1},
@@ -36,7 +41,8 @@ static int ver,hlp,del,squ;
              {
              case 0:
                // Si esta opción setea un flag acá no se hace nada.
-               // En nuestro caso todas las opciones setean flag, así que no hago nada
+               // En nuestro caso todas las opciones setean flag, 
+               //así que no hago nada
                 break;
 
              case 'V':
