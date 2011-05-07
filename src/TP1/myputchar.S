@@ -82,18 +82,19 @@ main:
 
 	.ent	myputchar			# Instrumenta símbolo de debugging.
 myputchar:
-		.frame	$fp,SSIZE,ra		# un Frame Pointer de tamaño SSIZE=8
+		.frame	$fp,SSIZE,ra		# un Frame Pointer de tamaño SSIZE
 		.set	noreorder
 		.cpload	t9			# t9 se usa para guardar la llamada a func que vaya a usar.
 		.set	reorder			
 
 	#Stack frame creation
 		subu	sp,sp,SSIZE
-		sw	a0,ARG0(sp)		#almacena el argumento en la ABA de la función invocante.		
 		sw	ra,O_RA(sp)
 		.cprestore  O_GP 		# equivale a sw gp,O_GP(sp). Para código independiente de la función.
 		sw	$fp,O_FP(sp) 		# Register saving: gp y fp. Leaf function.
 		move	$fp,sp
+		
+		sw	a0,ARG0(sp)		# Almacena el argumento en la ABA de la función invocante.		
 
 	#llamada al sistema para imprimir por pantalla el caracter -- putchar(ch)	
 		li      v0, SYS_write 		# Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
