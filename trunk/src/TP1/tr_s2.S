@@ -47,6 +47,9 @@ tr_s2:
         	la      a1, msgerr_tr_s2    	// a1: Puntero al mensaje de error.
         	li      a2, 12         		// a2: Longitud de caracteres (en este caso 24 bytes).
         	syscall	
+		li v0, SYS_exit			// Aquí hago uso de exit(1); 
+		li a0, 1 			// a0: Valor de retorno: 1
+		syscall 
 
 	continuar_trs2:
 		//invocacion a setup
