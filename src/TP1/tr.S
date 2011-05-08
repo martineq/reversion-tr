@@ -75,9 +75,34 @@ tr:
 	sw	zero,VAR1($fp)		# Inicializo en 0 ch
 
 	
-	lw	t0,ARG0($fp);
-	bne	t0,zero,continuar_trs2
+	lw	t0,ARG1($fp);		# Cargo set2
+	bne	t0,zero,errorEmpty	# Chequeo si no es el puntero nulo
 
+	# Empieza: setup(map1,set1,set2)
+		la	a0,map1		# Asigna map1 al argumento a0
+		lw	a1,ARG0($fp)	# Cargo el set1
+		lw	a2,ARG1($fp)	# Cargo el set2
+		jal	setup		# Salto a la función setup
+
+mientras1:
+		jal	mygetchar	# Salto a la función mygetchar
+		move	t0,v0		# ch = mygetchar()
+		not	t1,zero		# señal de EOF
+		beq	t0,t1,finMientras1	# Verifico: si es EOF voy al finMientras1
+
+	#Cargo el mapa, lo saque de tr_s2
+		la	s0,map1		
+		sll	t0,2		
+		addu	t1,s0,t0		// t1 = map1[ch]
+		lw	t1,0(t1)
+		sw	t0,VAR1($fp)		//lastch = ch
+		move	a0,t0
+		jal	myputchar
+
+		j	mientras1	# Hago el loop del mientras1
+
+
+# Errores
 
 errorEmpty:
 	#Si tengo error debo enviar msg de error, devolver un 1 y terminar el programa. 
@@ -86,16 +111,23 @@ errorEmpty:
         	la      a1, msgerr       	# a1: Puntero al mensaje de error.
         	li      a2, 11         		# a2: Longitud de caracteres (en este caso 11 bytes).
         	syscall				# Llamo al write()
+		bne	a3, zero,errorGenerico	# Reviso que el syscall no me mande error, si lo hay, salta al área de error
 		li	v0, SYS_exit		# Aquí hago uso de exit(1); 
 		li	a0, 1			# a0: Valor de retorno:1
 		syscall				# Llamo a exit
+		bne	a3, zero,errorGenerico	# Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 errorGenerico:
-	# Acá me falta agregar el caso donde los sys calls fallen, incluso el syscall exit.
+	# Acá me falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
 	# Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
 
-
-
+finMientras1:
+	# Stack Frame unwinding
+		move	sp,$fp
+		.cprestore  O_GP
+		sw	$fp,O_FP(sp)
+		sw	ra,O_RA(sp)
+		addiu	sp,sp,SSIZE
 
 	.end	tr
 
@@ -103,42 +135,3 @@ errorGenerico:
 msgerr:
         .asciiz "empty set2\n"
 
-
-
-# LÍMITE DE COSAS NUEVAS. LO DE ABAJO ES SOLO TEMPORAL--------------------------------------------------------------
-
-
-
-	//Invocación a setup
-		move	a0,s0			//asigna MAP0 al argumento 0
-		lw	t0,ARG0($fp)
-		move	a1,t0
-		move	a2,zero
-		jal	setup
-		j	condicion
-
-	ciclo:
-		add	t3,s0,t1		// address de map1 +desfasaje ch
-		lw	t2,0(t3)
-		beq	t2,zero,condicion
-		beq	t0,t1,condicion
-		move	t0,t1
-		move	a0,t1
-		jal	myputchar
-
-	condicion:
-		jal	mygetchar
-		addiu	t0,zero,OOBCH		// lastch = OOBCH
-		move	t1,v0			// ch = mygetChar()
-		not	t3,zero			// señal de EOF
-		bne	t1,t3,ciclo		// verifica EOF
-
-	//stack frame unwinding
-		move	sp,$fp
-		lw	$fp,O_FP(sp)
-		lw	gp,O_GP(sp)
-		lw	ra,O_RA(sp)
-		addiu	sp,sp,SSIZE
-		jr	ra
-
-	.end	tr
