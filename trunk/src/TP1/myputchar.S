@@ -87,6 +87,10 @@ errorSYS_write:
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
 
+errorGenerico:		
+  // Acá me falta agregar el caso donde los sys calls fallen, incluso el syscall exit.		
+  // Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá..
+
 fin:
 		lw 	ra,O_RA($fp)
 		lw 	gp,O_GP($fp)		// Cargo el gp del stack frame a gp...
