@@ -174,6 +174,7 @@ set2:
 	.word	'B'
 	.word	0
 
+	.globl map1
 	.type	map1, @object
 	.size	map1, 1024
 map1:
@@ -434,5 +435,6 @@ map1:
 	.word	254
 	.word	255
 	.word	'\0'
-	.local	map2
+
+	.globl	map2
 	.comm	map2,1024,4
