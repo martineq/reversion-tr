@@ -74,6 +74,35 @@ tr:
 	sw	a1,ARG1(sp)		# Guardo set2 en el SF.
 	sw	zero,VAR1($fp)		# Inicializo en 0 ch
 
+	
+	lw	t0,ARG0($fp);
+	bne	t0,zero,continuar_trs2
+
+
+errorEmpty:
+	#Si tengo error debo enviar msg de error, devolver un 1 y terminar el programa. 
+		li      v0, SYS_write 		# Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
+        	li      a0, 2         		# a0: Salida de error.
+        	la      a1, msgerr       	# a1: Puntero al mensaje de error.
+        	li      a2, 11         		# a2: Longitud de caracteres (en este caso 11 bytes).
+        	syscall				# Llamo al write()
+		li	v0, SYS_exit		# Aquí hago uso de exit(1); 
+		li	a0, 1			# a0: Valor de retorno:1
+		syscall				# Llamo a exit
+
+errorGenerico:
+	# Acá me falta agregar el caso donde los sys calls fallen, incluso el syscall exit.
+	# Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+
+
+
+
+	.end	tr
+
+  .rdata
+msgerr:
+        .asciiz "empty set2\n"
+
 
 
 # LÍMITE DE COSAS NUEVAS. LO DE ABAJO ES SOLO TEMPORAL--------------------------------------------------------------
