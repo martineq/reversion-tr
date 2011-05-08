@@ -90,6 +90,12 @@ errorSYS_read:
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo al exit()
+		bne	a3, zero,errorGenerico	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
+
+errorGenerico:
+	// Acá falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
+	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+
 eof:
 		not	v0,zero			//Señal de EOF
 fin_mygetchar:

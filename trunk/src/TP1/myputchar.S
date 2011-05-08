@@ -73,7 +73,7 @@ myputchar:
 		bne	a3, zero, errorSYS_write// Reviso que el SYS_write no me mande error, si lo hay, salta al área de error
 		li	t0, 1			// Con esta linea y la de abajo me aseguro de haber...
 		bne	v0, t0, errorSYS_write	// ...mandado un solo caracter, sino envio error
-		j	fin			// Si no hay errores llego hasta aquí y salto al fin
+		j	fin_myputchar			// Si no hay errores llego hasta aquí y salto al fin
 
 errorSYS_write:
 
@@ -86,12 +86,13 @@ errorSYS_write:
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
+		bne	a3, zero,errorGenerico	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
-errorGenerico:		
-  // Acá me falta agregar el caso donde los sys calls fallen, incluso el syscall exit.		
-  // Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá..
+errorGenerico:
+	// Acá falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
+	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
 
-fin:
+fin_myputchar:
 		lw 	ra,O_RA($fp)
 		lw 	gp,O_GP($fp)		// Cargo el gp del stack frame a gp...
 		lw 	$fp,O_FP($fp)		// Cargo el fp del stack frame a $fp...
