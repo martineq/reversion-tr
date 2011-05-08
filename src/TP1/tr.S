@@ -58,39 +58,39 @@ Stack frame del programa:
 
 	.ent	tr
 tr:
-	.frame	$fp,SSIZE,ra			# un Frame Pointer de tamaño SSIZE
+	.frame	$fp,SSIZE,ra		// un Frame Pointer de tamaño SSIZE
 	.set	noreorder
-	.cpload	t9				# t9 se usa para guardar la llamada a func que vaya a usar.
+	.cpload	t9			// t9 se usa para guardar la llamada a func que vaya a usar.
 	.set	reorder
 
-	# Construyo el espacio para el Stack frame
+	// Construyo el espacio para el Stack frame
 	subu	sp,sp,SSIZE
 	sw	ra,O_RA(sp)
-	sw	$fp,O_FP(sp) 		# Register saving: gp y fp. Obligatorio para las Leaf function.
-	.cprestore  O_GP 		# equivale a sw gp,O_GP(sp). Para código independiente de la función.
+	sw	$fp,O_FP(sp) 		// Register saving: gp y fp. Obligatorio para las Leaf function.
+	.cprestore  O_GP 		// equivale a sw gp,O_GP(sp). Para código independiente de la función.
 	move	$fp,sp
 
-	sw	a0,ARG0(sp)		# Almacena el argumento en la ABA de la función invocante. Guardo set1 en el SF.		
-	sw	a1,ARG1(sp)		# Guardo set2 en el SF.
-	sw	zero,VAR1($fp)		# Inicializo en 0 ch
+	sw	a0,ARG0(sp)		// Almacena el argumento en la ABA de la función invocante. Guardo set1 en el SF.		
+	sw	a1,ARG1(sp)		// Guardo set2 en el SF.
+	sw	zero,VAR1($fp)		// Inicializo en 0 ch
 
 	
-	lw	t0,ARG1($fp);		# Cargo set2
-	bne	t0,zero,errorEmpty	# Chequeo si no es el puntero nulo
+	lw	t0,ARG1($fp);		// Cargo set2
+	bne	t0,zero,errorEmpty	// Chequeo si no es el puntero nulo
 
-	# Empieza: setup(map1,set1,set2)
-		la	a0,map1		# Asigna map1 al argumento a0
-		lw	a1,ARG0($fp)	# Cargo el set1
-		lw	a2,ARG1($fp)	# Cargo el set2
-		jal	setup		# Salto a la función setup
+	// Empieza: setup(map1,set1,set2)
+		la	a0,map1		// Asigna map1 al argumento a0
+		lw	a1,ARG0($fp)	// Cargo el set1
+		lw	a2,ARG1($fp)	// Cargo el set2
+		jal	setup		// Salto a la función setup
 
 mientras1:
-		jal	mygetchar	# Salto a la función mygetchar
-		move	t0,v0		# ch = mygetchar()
-		not	t1,zero		# señal de EOF
-		beq	t0,t1,finMientras1	# Verifico: si es EOF voy al finMientras1
+		jal	mygetchar	// Salto a la función mygetchar
+		move	t0,v0		// ch = mygetchar()
+		not	t1,zero		// señal de EOF
+		beq	t0,t1,finMientras1	// Verifico: si es EOF voy al finMientras1
 
-	#Cargo el mapa, lo saque de tr_s2
+	//Cargo el mapa. Esta parte la tengo en vista
 		la	s0,map1		
 		sll	t0,2		
 		addu	t1,s0,t0		// t1 = map1[ch]
@@ -99,30 +99,30 @@ mientras1:
 		move	a0,t0
 		jal	myputchar
 
-		j	mientras1	# Hago el loop del mientras1
+		j	mientras1	// Hago el loop del mientras1
 
 
-# Errores
+// Errores
 
 errorEmpty:
-	#Si tengo error debo enviar msg de error, devolver un 1 y terminar el programa. 
-		li      v0, SYS_write 		# Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
-        	li      a0, 2         		# a0: Salida de error.
-        	la      a1, msgerr       	# a1: Puntero al mensaje de error.
-        	li      a2, 11         		# a2: Longitud de caracteres (en este caso 11 bytes).
-        	syscall				# Llamo al write()
-		bne	a3, zero,errorGenerico	# Reviso que el syscall no me mande error, si lo hay, salta al área de error
-		li	v0, SYS_exit		# Aquí hago uso de exit(1); 
-		li	a0, 1			# a0: Valor de retorno:1
-		syscall				# Llamo a exit
-		bne	a3, zero,errorGenerico	# Reviso que el syscall no me mande error, si lo hay, salta al área de error
+	// Si tengo error debo enviar msg de error, devolver un 1 y terminar el programa. 
+		li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
+        	li      a0, 2         		// a0: Salida de error.
+        	la      a1, msgerr       	// a1: Puntero al mensaje de error.
+	       	li      a2, 11         		// a2: Longitud de caracteres (en este caso 11 bytes).
+        	syscall				// Llamo al write()
+		bne	a3, zero,errorGenerico	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
+		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
+		li	a0, 1			// a0: Valor de retorno:1
+		syscall				// Llamo a exit
+		bne	a3, zero,errorGenerico	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 errorGenerico:
-	# Acá me falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
-	# Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+	// Acá me falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
+	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
 
 finMientras1:
-	# Stack Frame unwinding
+	// Stack Frame unwinding
 		move	sp,$fp
 		.cprestore  O_GP
 		sw	$fp,O_FP(sp)
