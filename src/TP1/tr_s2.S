@@ -1,14 +1,15 @@
 #include <mips/regdef.h>
 #include <sys/syscall.h>
-#define SFsize	32
-#define O_A1		48
-#define O_A0		48
-#define O_RA		44
-#define O_FP		40
-#define O_GP		36
-#define O_SET1		28
-#define O_LASTCH	24
-#define O_CH		20
+
+#define ARG1		44
+#define ARG0		40
+#define O_RA		36
+#define O_FP		32
+#define O_GP		28
+#define	VAR1		20
+#define VAR2		16
+
+#define SSIZE		40
 
 	.text
 	.align	2

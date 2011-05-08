@@ -24,8 +24,6 @@ Stack frame del programa:
 #include <mips/regdef.h>
 #include <sys/syscall.h>
 
-#define fp		$fp
-
 #define NCHARS		256
 
 #define ARG2		48
@@ -40,45 +38,10 @@ Stack frame del programa:
 
 	.text
 	.align	2
-	.globl	main
-	.ent	main
-
-main:
-	.frame	fp,SSIZE,ra
-	.set	noreorder
-	.cpload	t9
-	.set	reorder			
-
-	move	v0,zero
-	move	v1,zero
-
-	//Stack frame creation
-		subu	sp,sp,SSIZE
-		sw	ra,O_RA(sp)
-		sw	fp,O_FP(sp)
-		.cprestore  O_GP 
-		move	fp,sp
-	
-	//invocación a la función: setup
-		la	a0,map1
-		la	a1,set1
-		la	a2,set2
-		jal	setup
-
-	//Stack frame unwinding
-		move	sp,fp
-		lw	ra,O_RA(sp)	
-		lw	gp,O_GP(sp)
-		lw	fp,O_FP(sp)
-		addiu	sp,sp,SSIZE
-		j	ra
-
-	.end main
-
-
+	.globl	setup
 	.ent	setup
 setup:
-		.frame	fp,SSIZE,ra	
+		.frame	$fp,SSIZE,ra
 		.set	noreorder
 		.cpload	t9		
 		.set	reorder			
@@ -89,15 +52,15 @@ setup:
 		sw	a1,ARG1(sp)	
 		sw	a0,ARG0(sp)	
 		sw	ra,O_RA(sp)
-		sw	fp,O_FP(sp)
+		sw	$fp,O_FP(sp)
 		.cprestore  O_GP 
 		sw	zero,VAR1(sp)
-		move	fp,sp
+		move	$fp,sp
 
 	//Inicio función setup
-		lw	s0,ARG0(fp)
-		lw	s1,ARG1(fp)
-		lw	s2,ARG2(fp)
+		lw	s0,ARG0($fp)
+		lw	s1,ARG1($fp)
+		lw	s2,ARG2($fp)
 
 if1:
 		bne	s1,zero,if2
@@ -139,7 +102,7 @@ while_2:
 		j	while_2	
 
 fin_while2:
-		lw	t1,VAR1(fp)
+		lw	t1,VAR1($fp)
 		addiu	t2,s2,-4
 		lw	t1,0(t2)
 while3:						//while(*set1)
@@ -153,10 +116,10 @@ while3:						//while(*set1)
 		j	while3
 
 fin_setup:
-		move	sp,fp
+		move	sp,$fp
 		lw 	ra,O_RA(sp)
 		lw 	gp,O_GP(sp)		
-		lw 	fp,O_FP(sp)		
+		lw 	$fp,O_FP(sp)
 		addiu 	sp,sp,SSIZE		
 		jr ra				
 
