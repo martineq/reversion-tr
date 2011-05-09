@@ -1,6 +1,8 @@
 #include <mips/regdef.h>
 #include <sys/syscall.h>
 
+#define	OOBCH		257
+
 #define ARG1		44
 #define ARG0		40
 #define O_RA		36
@@ -14,7 +16,6 @@
 	.text
 	.align	2
 	.globl	tr_s2
-
 	.ent	tr_s2
 
 tr_s2:
@@ -23,84 +24,82 @@ tr_s2:
 	.cpload	t9
 	.set	reorder
 
-	//Stack frame creation
-		subu	sp,sp,SSIZE
-		sw	ra,O_RA(sp)
-		sw	$fp,O_FP(sp)
-		.cprestore  O_GP
-		move	$fp,sp
+	subu	sp,sp,SSIZE		//Stack frame creation
+	sw	ra,O_RA(sp)
+	sw	$fp,O_FP(sp)
+	.cprestore  O_GP
+	move	$fp,sp
 
-	//carga los argumentos en la ABA de la caller
-		sw	a0,ARG0($fp)
-		sw	a1,ARG1($fp)
+	sw	a0,ARG0($fp)		//carga los argumentos en la ABA de la caller
+	sw	a1,ARG1($fp)
 
-	//cargamos las variables locales
-		sw	zero,VAR1($fp)		//lastch es VAR1
-		sw	zero,VAR2($fp)		//ch es VAR2
+	addiu	t0,zero,OOBCH		//cargamos las variables locales
+	sw	t0,VAR1($fp)		//lastch es VAR1
+	sw	zero,VAR2($fp)		//ch es VAR2
 
-	//Inicio de la lógica de la función	
-		lw	t0,ARG0($fp);
-		bne	t0,zero,continuar_trs2
 
-	//hace una llamada al sistema errx(1,"empty set2")
-		li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
-        	li      a0, 2         		// a0: Salida de error.
-        	la      a1, msgerr_tr_s2    	// a1: Puntero al mensaje de error.
-        	li      a2, 12         		// a2: Longitud de caracteres (en este caso 24 bytes).
-        	syscall	
-		li v0, SYS_exit			// Aquí hago uso de exit(1); 
-		li a0, 1 			// a0: Valor de retorno: 1
-		syscall 
+	lb	t0,ARG0($fp);		//Inicio de la lógica de la función
+	bne	t0,zero,continuar_trs2
 
-	continuar_trs2:
-		//invocacion a setup
-		la	a0,map1
-		lw	a1,ARG0($fp)
-		lw	a2,ARG1($fp)
-		jal	setup
+	li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad);
+       	li      a0, 2         		// a0: Salida de error.
+       	la      a1, msgerr_tr_s2    	// a1: Puntero al mensaje de error.
+       	li      a2, 12         		// a2: Longitud de caracteres (en este caso 24 bytes).
+       	syscall
+	li v0, SYS_exit			// Aquí hago uso de exit(1);
+	li a0, 1 			// a0: Valor de retorno: 1
+	syscall				//hace una llamada al sistema errx(1,"empty set2")
 
-		//invocacion a setup
-		la	a0,map2
-		lw	a1,ARG1($fp)
-		move	a2,zero
-		jal	setup
+  continuar_trs2:
+	la	a0,map1			//invocacion a setup
+	lw	a1,ARG0($fp)
+	lw	a2,ARG1($fp)
+	jal	setup
+	la	a0,map2			//invocacion a setup
+	lw	a1,ARG1($fp)
+	move	a2,zero
+	jal	setup
+	j	condicion_trs2
 
-		j	condicion_trs2
+  ciclo_trs2:
+	la	s0,map1
+	sll	t1,t0,2
+	addu	t1,s0,t1		// t1 = map1[ch]
+	lb	t0,0(t1)		// t0 = *map1[ch]
+	sw	t0,VAR2($fp)		// ch = t0
 
-	ciclo_trs2:
-		la	s0,map1
-		sll	t0,2		
-		addu	t1,s0,t0		// t1 = map1[ch]
-		lw	t1,0(t1)
+	la	s3,map2
+	sll	t1,t0,2
+	addu	t1,s3,t1		// t1 = map2[ch]
+	lb	t3,0(t1)		// t3 = *map2[ch]
+	beq	t3,zero,guardarCaracter
+	lw	t1,VAR1($fp)		// t1 = lastch
+	bne	t1,t0,guardarCaracter	// lastch != ch
+	j	condicion_trs2
 
-		la	s1,map2
-		sll	t0,2
-		addu	t2,s1,t0		// t2 = map2[ch]
-		lw	t2,0(t2)
+  guardarCaracter:
+	sw	t0,VAR1($fp)		//lastch = ch
+	move	a0,t0
+	jal	myputchar
+	j	condicion_trs2
 
-		bne	t2,zero,condicion_trs2
-		lw	t3,VAR1($fp)		// t3 = lastch
-		beq	t3,t0,condicion_trs2
+  condicion_trs2:
+	addiu	t0,zero,0
+	jal	mygetchar
+	move	t0,v0			// ch = mygetchar()
+	sw	t0,VAR2($fp)		// ch = t0
+	not	t1,zero			// señal de EOF
+	bne	t0,t1,ciclo_trs2	// verifico si no es EOF
 
-		sw	t0,VAR1($fp)		//lastch = ch
-		move	a0,t0
-		jal	myputchar
-
-	condicion_trs2:
-		jal	mygetchar
-		move	t0,v0			// ch = mygetchar()
-		not	t1,zero			// señal de EOF
-		bne	t0,t1,ciclo_trs2	// verifico si no es EOF
-
-	//Stack frame unwinding
-		move	sp,$fp
-		.cprestore  O_GP
-		sw	$fp,O_FP(sp)
-		sw	ra,O_RA(sp)
-		addiu	sp,sp,SSIZE
-
+	move	sp,$fp			//Stack frame unwinding
+	lw	$fp,O_FP(sp)
+	lw	gp,O_GP(sp)
+	lw	ra,O_RA(sp)
+	addiu	sp,sp,SSIZE
+	jr	ra
 	.end tr_s2
 
-        .rdata
-msgerr_tr_s2:
+	.data
+	.align	2
+   msgerr_tr_s2:
         .asciiz "empty set2\n"
