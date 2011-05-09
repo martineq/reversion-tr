@@ -63,30 +63,33 @@ setup:
 		lw	s2,ARG2($fp)
 
 if1:
-		bne	s1,zero,if2
+		bne	s1,zero,if2		// Si set1 != NULL voy a if2
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
 if2:
-		bne	s2,zero,while_2
-		addiu	t0,zero,NCHARS
+		bne	s2,zero,fin_if2		//Si set2 != NULL voy a fin_if2
+		addiu	t0,zero,NCHARS		// t0 = NCHARS
 
-	memset:
-		sw	zero,0(s1)
-		subu	t0,t0,1			
-		addiu	s0,s0,4			
+	memset:					// inicializa los elementos de
+						// map1(s0) en 0
+		sw	zero,0(s0)		// *s0 = 0
+		subu	t0,t0,1			// t0 = t0-1
+		addiu	s0,s0,4			// siguiente elemento de map1
 		bne	t0,zero,memset
-	
+
+		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 	while_if2:				// while(*set1)
-		lw	t0,0(s1)		
-		beq	s1,zero,fin_setup;
-		addiu	t1,zero,1		
+		lw	t0,0(s1)		// cargo lo apuntado por s1 en t0
+		beq	t0,zero,fin_setup;	// cuando t0 = 0 termina el while
+		addiu	t1,zero,1		// t1 = 1
 		sll	t0,2			
 		addu	t0,s0,t0		// to = direccion de map[*set1]
 		sw	t1,0(t0)		// map[*set1] = 1
 		addiu	s1,s1,4			// set1++
 		j	while_if2
-
+fin_if2:
+		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while_2:
 		lw	t0,0(s1)		
 		beq	t0,zero,fin_while2
@@ -105,6 +108,7 @@ fin_while2:
 		lw	t1,VAR1($fp)
 		addiu	t2,s2,-4
 		lw	t1,0(t2)
+		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while3:						//while(*set1)
 		lw	t0,0(s1)		// t3 = *SET1
 		beq	t0,zero,fin_setup;
@@ -121,7 +125,7 @@ fin_setup:
 		lw 	gp,O_GP(sp)		
 		lw 	$fp,O_FP(sp)
 		addiu 	sp,sp,SSIZE		
-		jr ra				
+		jr 	ra
 
 	.end	setup
 
@@ -397,7 +401,7 @@ map1:
 	.word	253
 	.word	254
 	.word	255
-	.word	'\0'
+	.word	0
 
 	.globl	map2
 	.comm	map2,1024,4

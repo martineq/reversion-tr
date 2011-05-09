@@ -37,56 +37,59 @@ Stack frame del programa:
 	.text
 	.align	2
 	.globl	tr_s1
-
-
 	.ent	tr_s1
-tr_s1:
+
+   tr_s1:
 	.frame	$fp,SSIZE,ra
 	.set	noreorder
 	.cpload	t9
 	.set	reorder
 
-	//Stack frame creation
-		subu	sp,sp,SSIZE
-		sw	ra,O_RA(sp)
-		sw	$fp,O_FP(sp)
-		.cprestore  O_GP
-		move	$fp,sp
+	subu	sp,sp,SSIZE		//Stack frame creation
+	sw	ra,O_RA(sp)
+	sw	$fp,O_FP(sp)
+	.cprestore  O_GP
+	move	$fp,sp
 
-		sw	a0,ARG0($fp)		// almaceno a0 en ABA caller
-		sw	zero,VAR1($fp)		// inicializo en 0 lastch
-		sw	zero,VAR2($fp)		// inicializo en 0 ch
+	sw	a0,ARG0($fp)		// almaceno a0 en ABA caller
+	addiu	t0,zero,OOBCH		// lastch = OOBCH
+	sw	t0,VAR1($fp)		// inicializo en OOBCH lastch
+	sw	zero,VAR2($fp)		// inicializo en 0 ch
 
-	//Invocación a setup
-		move	a0,s0			//asigna MAP0 al argumento 0
-		lw	t0,ARG0($fp)
-		move	a1,t0
-		move	a2,zero
-		jal	setup
-		j	condicion
+	la	s0,map1
 
-	ciclo:
-		add	t3,s0,t1		// address de map1 +desfasaje ch
-		lw	t2,0(t3)
-		beq	t2,zero,condicion
-		beq	t0,t1,condicion
-		move	t0,t1
-		move	a0,t1
-		jal	myputchar
+	move	a0,s0			//asigna MAP0 al argumento 0
+	lw	t0,ARG0($fp)
+	move	a1,t0
+	move	a2,zero
+	jal	setup			//Invocación a setup
+	j	condicion
 
-	condicion:
-		jal	mygetchar
-		addiu	t0,zero,OOBCH		// lastch = OOBCH
-		move	t1,v0			// ch = mygetChar()
-		not	t3,zero			// señal de EOF
-		bne	t1,t3,ciclo		// verifica EOF
+   ciclo:
+	sll	t0,t1,2
+	la	s0,map1
+	add	t0,s0,t0		// address de map1 +desfasaje ch
+	lw	t2,0(t0)
+	beq	t2,zero,imprimirCaracter// !map1[ch] es equivalente a que map1[ch]==0
+	lw	t0,VAR1($fp)
+	bne	t0,t1,imprimirCaracter	// si lastch != ch => almacena
+	j	condicion		// si no se cumple ninguna no almacena nada
 
-	//stack frame unwinding
-		move	sp,$fp
-		lw	$fp,O_FP(sp)
-		lw	gp,O_GP(sp)
-		lw	ra,O_RA(sp)
-		addiu	sp,sp,SSIZE
-		jr	ra
+   imprimirCaracter:
+	sw	t1,VAR1($fp)
+	move	a0,t1
+	jal	myputchar
+
+   condicion:
+	jal	mygetchar
+	move	t1,v0			// ch = mygetChar()
+	not	t3,zero			// señal de EOF
+	bne	t1,t3,ciclo		// verifica EOF
+	move	sp,$fp			//stack frame unwinding
+	lw	$fp,O_FP(sp)
+	lw	gp,O_GP(sp)
+	lw	ra,O_RA(sp)
+	addiu	sp,sp,SSIZE
+	jr	ra
 
 	.end	tr_s1
