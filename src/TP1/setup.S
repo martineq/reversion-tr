@@ -61,7 +61,6 @@ setup:
 		lw	s0,ARG0($fp)
 		lw	s1,ARG1($fp)
 		lw	s2,ARG2($fp)
-
 if1:
 		bne	s1,zero,if2		// Si set1 != NULL voy a if2
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
@@ -80,43 +79,43 @@ if2:
 
 		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 	while_if2:				// while(*set1)
-		lw	t0,0(s1)		// cargo lo apuntado por s1 en t0
+		lb	t0,0(s1)		// cargo lo apuntado por s1 en t0
 		beq	t0,zero,fin_setup;	// cuando t0 = 0 termina el while
 		addiu	t1,zero,1		// t1 = 1
 		sll	t0,2			
 		addu	t0,s0,t0		// to = direccion de map[*set1]
 		sw	t1,0(t0)		// map[*set1] = 1
-		addiu	s1,s1,4			// set1++
+		addiu	s1,s1,1			// set1++
 		j	while_if2
 fin_if2:
 		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while_2:
-		lw	t0,0(s1)		
+		lb	t0,0(s1)
 		beq	t0,zero,fin_while2
 
-		lw	t1,0(s2)		
+		lb	t1,0(s2)
 		beq	t1,zero,fin_while2
 
 		sll	t0,2
 		addu	t0,s0,t0		// t3 = direccion de MAP[*set1]
 		sw	t1,0(t0)		// MAP[*set1] = *SET2
-		addiu	s1,s1,4			// set1++
-		addiu	s2,s2,4			// set2++
+		addiu	s1,s1,1			// set1++
+		addiu	s2,s2,1			// set2++
 		j	while_2	
 
 fin_while2:
 		lw	t1,VAR1($fp)
-		addiu	t2,s2,-4
-		lw	t1,0(t2)
+		addiu	t2,s2,-1
+		lb	t1,0(t2)
 		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while3:						//while(*set1)
-		lw	t0,0(s1)		// t3 = *SET1
+		lb	t0,0(s1)		// t3 = *SET1
 		beq	t0,zero,fin_setup;
 
 		sll	t0,t0,2			// multiplo por 4 el contenido
 		addu	t0,s0,t0		// direccion de map[*set1] en t3
 		sw	t1,0(t0)		// map[*set1] = lastch
-		addiu	s1,s1,4			// set1++
+		addiu	s1,s1,1			// set1++
 		j	while3
 
 fin_setup:
@@ -131,16 +130,6 @@ fin_setup:
 
 	.data
 	.align	2
-set1:
-	.word	'a'
-	.word	'b'
-	.word	'c'
-	.word	0
-set2:
-	.word	'A'
-	.word	'B'
-	.word	0
-
 	.globl map1
 	.type	map1, @object
 	.size	map1, 1024

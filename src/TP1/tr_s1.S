@@ -79,8 +79,10 @@ Stack frame del programa:
 	sw	t1,VAR1($fp)
 	move	a0,t1
 	jal	myputchar
+	j	condicion
 
    condicion:
+	addiu	t0,zero,1
 	jal	mygetchar
 	move	t1,v0			// ch = mygetChar()
 	not	t3,zero			// señal de EOF
