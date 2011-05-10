@@ -124,7 +124,7 @@ errorGenerico:
 
 finMientras1:
 	// Stack Frame unwinding
-		move	sp,$fp			//Stack frame unwinding
+	move	sp,$fp
 	lw	$fp,O_FP(sp)
 	lw	gp,O_GP(sp)
 	lw	ra,O_RA(sp)
