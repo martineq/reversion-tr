@@ -42,7 +42,6 @@ Stack frame del programa:
 
 #define	OOBCH		257
 
-
 #define ARG1		44
 #define ARG0		40
 #define O_RA		36
@@ -91,7 +90,7 @@ mientras:
 	move	t0,v0			// ch = mygetchar()
 	sw	t0,VAR1($fp)		// Pongo el valor de mygetchar en VAR1=ch
 	not	t1,zero			// Cargo en t1 una señal de EOF
-	bne	t0,t1,finMientras1	// Si es EOF, termino el ciclo mientras.
+	beq	t0,t1,finMientras1	// Si es EOF, termino el ciclo mientras.
 
 	// Si cumplo la condición entro al ciclo.
 	la	s0,map1			// Cargo la dirección del mapa en s0
@@ -125,11 +124,12 @@ errorGenerico:
 
 finMientras1:
 	// Stack Frame unwinding
-		move	sp,$fp
-		.cprestore  O_GP
-		sw	$fp,O_FP(sp)
-		sw	ra,O_RA(sp)
-		addiu	sp,sp,SSIZE
+		move	sp,$fp			//Stack frame unwinding
+	lw	$fp,O_FP(sp)
+	lw	gp,O_GP(sp)
+	lw	ra,O_RA(sp)
+	addiu	sp,sp,SSIZE
+	jr	ra
 
 	.end	tr
 
