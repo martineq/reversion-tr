@@ -631,12 +631,20 @@ fin_mygetchar:
 //FUNCION MYGETCHAR //////////////////////////////////////////////
 
 //sysKILL ////////////////////////////////////////////////////////
+// Las instrucciones a continuación prodrán ser invocadas desde
+// diferentes secciones del programa. En el caso de que una llamada
+// a SYS_exit no sea satisfactoria se invoca a SYS_kill para que
+// realice una terminación abrupta del programa. Por lo que no debería
+// continuarse con la ejecución del mismo por ello lo ubicamos al final
+// del archivo tr.
 
+	.ent	sysKILL
 sysKILL:
 	li      v0, SYS_kill 		// invocación a terminar abruptamente el programa
        	move	a0, zero       		// pid = 0, programa actual
        	li      a1, SIGKILL		// SIGKILL = 9, terminar abruptamente
        	syscall
+	.end	sysKILL
 
 ///////////////77/////////////////////////////////////////////////
 
