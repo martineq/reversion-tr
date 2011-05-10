@@ -28,6 +28,7 @@ Stack frame del programa:
 
 #define	OOBCH		257
 #define NCHARS		256
+#define SIGKILL		9
 
 #define SSIZE		40
 
@@ -284,6 +285,7 @@ tr_s2:
 	li v0, SYS_exit			// Aquí hago uso de exit(1);
 	li a0, 1 			// a0: Valor de retorno: 1
 	syscall				//hace una llamada al sistema errx(1,"empty set2")
+	bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
   continuar_trs2:
 	la	a0,map1			//invocacion a setup
@@ -397,15 +399,10 @@ errorEmpty_tr:
         	la      a1, msgerr_set2       	// a1: Puntero al mensaje de error.
 	       	li      a2, 11         		// a2: Longitud de caracteres (en este caso 11 bytes).
         	syscall				// Llamo al write()
-		bne	a3, zero,errorGenerico_tr// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
-		bne	a3, zero,errorGenerico_tr// Reviso que el syscall no me mande error, si lo hay, salta al área de error
-
-errorGenerico_tr:
-	// Acá me falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
-	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 finMientras_tr:
 	// Stack Frame unwinding
@@ -450,6 +447,8 @@ if1:
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
+		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, termina abruptamente el programa.
+
 if2:
 		bne	s2,zero,fin_if2		//Si set2 != NULL voy a fin_if2
 		addiu	t0,zero,NCHARS		// t0 = NCHARS
@@ -556,11 +555,7 @@ errorSYS_write:
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
-		bne	a3, zero,errorGenerico_pc// Reviso que el syscall no me mande error, si lo hay, salta al área de error
-
-errorGenerico_pc:
-	// Acá falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
-	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 fin_myputchar:
 		move	sp,$fp
@@ -619,11 +614,7 @@ errorSYS_read:
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo al exit()
-		bne	a3, zero,errorGenerico_gc// Reviso que el syscall no me mande error, si lo hay, salta al área de error
-
-errorGenerico_gc:
-	// Acá falta agregar el caso donde los sys calls fallan, incluso el syscall exit.
-	// Hay un comando en assembler para mandar un error, si alguien lo sabe que avise o lo agregue acá...
+		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 eof:
 		not	v0,zero			//Señal de EOF
@@ -638,6 +629,16 @@ fin_mygetchar:
 		.end	mygetchar
 
 //FUNCION MYGETCHAR //////////////////////////////////////////////
+
+//sysKILL ////////////////////////////////////////////////////////
+
+sysKILL:
+	li      v0, SYS_kill 		// invocación a terminar abruptamente el programa
+       	move	a0, zero       		// pid = 0, programa actual
+       	li      a1, SIGKILL		// SIGKILL = 9, terminar abruptamente
+       	syscall
+
+///////////////77/////////////////////////////////////////////////
 
 //DATA ///////////////////////////////////////////////////////////
 
