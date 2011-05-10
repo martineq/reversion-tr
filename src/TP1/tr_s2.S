@@ -38,13 +38,13 @@ tr_s2:
 	sw	zero,VAR2($fp)		//ch es VAR2
 
 
-	lb	t0,ARG0($fp);		//Inicio de la lógica de la función
+	lb	t0,ARG1($fp);		//Inicio de la lógica de la función
 	bne	t0,zero,continuar_trs2
 
 	li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad);
        	li      a0, 2         		// a0: Salida de error.
        	la      a1, msgerr_tr_s2    	// a1: Puntero al mensaje de error.
-       	li      a2, 12         		// a2: Longitud de caracteres (en este caso 24 bytes).
+       	li      a2, 11         		// a2: Longitud de caracteres (en este caso 24 bytes).
        	syscall
 	li v0, SYS_exit			// Aquí hago uso de exit(1);
 	li a0, 1 			// a0: Valor de retorno: 1
@@ -65,13 +65,13 @@ tr_s2:
 	la	s0,map1
 	sll	t1,t0,2
 	addu	t1,s0,t1		// t1 = map1[ch]
-	lb	t0,0(t1)		// t0 = *map1[ch]
+	lw	t0,0(t1)		// t0 = *map1[ch]
 	sw	t0,VAR2($fp)		// ch = t0
 
 	la	s3,map2
 	sll	t1,t0,2
 	addu	t1,s3,t1		// t1 = map2[ch]
-	lb	t3,0(t1)		// t3 = *map2[ch]
+	lw	t3,0(t1)		// t3 = *map2[ch]
 	beq	t3,zero,guardarCaracter
 	lw	t1,VAR1($fp)		// t1 = lastch
 	bne	t1,t0,guardarCaracter	// lastch != ch
