@@ -10,10 +10,10 @@ Stack frame del programa:
 (ABA)  44  |ARG1 |	
 (ABA)  40  |ARG0 |	
 	   -----
-(SRA)  36  |RA   |	>> Dirección de retorno
-(SRA)  32  |FP   |	>> Frame Pointer. SR
-(SRA)  28  |GP   |
-(SRA)  24  |PAD  |
+(SRA)  36  |PAD  |
+(SRA)  32  |RA   |	>> Dirección de retorno
+(SRA)  28  |FP   |	>> Frame Pointer. SR
+(SRA)  24  |GP   |
 (LTA)  20  |VAR1 |
 (LTA)  16  |VAR2 |
 (ABA)  12  |ARG3 |	
@@ -36,9 +36,9 @@ Stack frame del programa:
 #define ARG1		44
 #define ARG0		40
 
-#define O_RA		36
-#define O_FP		32
-#define O_GP		28
+#define O_RA		32
+#define O_FP		28
+#define O_GP		24
 #define VAR1		20
 #define VAR2		16
 
@@ -83,17 +83,17 @@ tr_ds:
 		jal	setup
 
 	ciclo_trds:
-		la	s0,map1
+		la	t2,map1
 		sll	t1,t0,2			// t0 tiene ch
-		addu	t1,s0,t1		// t1 = map1[ch]
+		addu	t1,t2,t1		// t1 = map1[ch]
 		lw	t1,0(t1)		// t1 = *map1[ch]
 		beq	t1,zero,segundaCondicion
 		j	condicion_trds
 
 	segundaCondicion:
-		la	s3,map2
+		la	t2,map2
 		sll	t1,t0,2			// t0 tiene ch
-		addu	t1,s3,t1		// t1 = map2[ch]
+		addu	t1,t2,t1		// t1 = map2[ch]
 		lw	t1,0(t1)		// t1 = *map2[ch]
 		beq	t1,zero,almacenarCaracter// map2[ch]==0
 		lw	t1,VAR2($fp)		// t1 = lastch
@@ -164,9 +164,9 @@ tr_d:
 		beq	t0,t1,finMientras_trd	// Si es EOF, termino el ciclo mientras.
 
 	// Si cumplo la condición entro al ciclo.
-		la	s0,map1			// Cargo la dirección del mapa en s0
+		la	t2,map1			// Cargo la dirección del mapa en t2
 		sll	t1,t0,2			// Corrimiento de 2 a izquierda de v0 (el ch)
-		addu	t1,s0,t1		// t1 = map1[ch]
+		addu	t1,t2,t1		// t1 = map1[ch]
 		lw	t1,0(t1)		// t1 = *map1[ch]
 		sw	t1,VAR1($fp)		// ch = t1
 		bne	t1,zero,mientras_trd
@@ -207,9 +207,7 @@ tr_d:
 	sw	t0,VAR1($fp)		// inicializo en OOBCH lastch
 	sw	zero,VAR2($fp)		// inicializo en 0 ch
 
-	la	s0,map1
-
-	move	a0,s0			//asigna MAP0 al argumento 0
+	la	a0,map1			//asigna MAP0 al argumento 0
 	lw	t0,ARG0($fp)
 	move	a1,t0
 	move	a2,zero
@@ -218,8 +216,8 @@ tr_d:
 
    ciclo:
 	sll	t0,t1,2
-	la	s0,map1
-	add	t0,s0,t0		// address de map1 +desfasaje ch
+	la	t3,map1
+	add	t0,t3,t0		// address de map1 +desfasaje ch
 	lw	t2,0(t0)
 	beq	t2,zero,imprimirCaracter// !map1[ch] es equivalente a que map1[ch]==0
 	lw	t0,VAR1($fp)
@@ -274,7 +272,7 @@ tr_s2:
 	sw	zero,VAR2($fp)		//ch es VAR2
 
 
-	lb	t0,ARG1($fp);		//Inicio de la lógica de la función
+	lbu	t0,ARG1($fp);		//Inicio de la lógica de la función
 	bne	t0,zero,continuar_trs2
 
 	li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad);
@@ -299,15 +297,15 @@ tr_s2:
 	j	condicion_trs2
 
   ciclo_trs2:
-	la	s0,map1
+	la	t2,map1
 	sll	t1,t0,2
-	addu	t1,s0,t1		// t1 = map1[ch]
+	addu	t1,t2,t1		// t1 = map1[ch]
 	lw	t0,0(t1)		// t0 = *map1[ch]
 	sw	t0,VAR2($fp)		// ch = t0
 
-	la	s3,map2
+	la	t2,map2
 	sll	t1,t0,2
-	addu	t1,s3,t1		// t1 = map2[ch]
+	addu	t1,t2,t1		// t1 = map2[ch]
 	lw	t3,0(t1)		// t3 = *map2[ch]
 	beq	t3,zero,guardarCaracter
 	lw	t1,VAR1($fp)		// t1 = lastch
@@ -361,7 +359,7 @@ tr:
 	sw	a1,ARG1($fp)		// Guardo set2 en el SF.
 	sw	zero,VAR1($fp)		// Inicializo en 0 ch (VAR1=0)
 
-	lb	t0,ARG1($fp);		// Cargo set2 (ARG0=set1 y ARG1=set2)
+	lbu	t0,ARG1($fp);		// Cargo set2 (ARG0=set1 y ARG1=set2)
 	beq	t0,zero,errorEmpty_tr	// Chequeo si no es el puntero nulo, si es nulo me voy a mandar el err
 
 	// Empieza: setup(map1,set1,set2)
@@ -380,10 +378,10 @@ mientras_tr:
 	beq	t0,t1,finMientras_tr	// Si es EOF, termino el ciclo mientras.
 
 	// Si cumplo la condición entro al ciclo.
-	la	s0,map1			// Cargo la dirección del mapa en s0
+	la	t2,map1			// Cargo la dirección del mapa en t2
 	sll	t1,t0,2			// Corrimiento de 2 a izquierda de v0 (el ch)
-	addu	t1,s0,t1		// t1 = map1[ch]
-	lb	t0,0(t1)		// t0 = *map1[ch]
+	addu	t1,t2,t1		// t1 = map1[ch]
+	lbu	t0,0(t1)		// t0 = *map1[ch]
 	sw	t0,VAR1($fp)		// ch = t0
 	move	a0,t0
 	jal	myputchar
@@ -394,15 +392,15 @@ mientras_tr:
 
 errorEmpty_tr:
 	// Si tengo error debo enviar msg de error, devolver un 1 y terminar el programa. 
-		li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
-        	li      a0, 2         		// a0: Salida de error.
-        	la      a1, msgerr_set2       	// a1: Puntero al mensaje de error.
-	       	li      a2, 11         		// a2: Longitud de caracteres (en este caso 11 bytes).
-        	syscall				// Llamo al write()
-		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
-		li	a0, 1			// a0: Valor de retorno:1
-		syscall				// Llamo a exit
-		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
+	li      v0, SYS_write 		// Aquí hago uso de <sys/syscall.h>. ssize_t write(int archivo, const void *buffer, size_t cantidad); 
+        li      a0, 2         		// a0: Salida de error.
+        la      a1, msgerr_set2       	// a1: Puntero al mensaje de error.
+   	li      a2, 11         		// a2: Longitud de caracteres (en este caso 11 bytes).
+        syscall				// Llamo al write()
+	li	v0, SYS_exit		// Aquí hago uso de exit(1); 
+	li	a0, 1			// a0: Valor de retorno:1
+	syscall				// Llamo a exit
+	bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, salta al área de error
 
 finMientras_tr:
 	// Stack Frame unwinding
@@ -439,66 +437,66 @@ setup:
 		move	$fp,sp
 
 	//Inicio función setup
-		lw	s0,ARG0($fp)
-		lw	s1,ARG1($fp)
-		lw	s2,ARG2($fp)
+		lw	t3,ARG0($fp)
+		lw	t4,ARG1($fp)
+		lw	t5,ARG2($fp)
 if1:
-		bne	s1,zero,if2		// Si set1 != NULL voy a if2
+		bne	t4,zero,if2		// Si set1 != NULL voy a if2
 		li	v0, SYS_exit		// Aquí hago uso de exit(1); 
 		li	a0, 1			// a0: Valor de retorno:1
 		syscall				// Llamo a exit
 		bne	a3, zero,sysKILL	// Reviso que el syscall no me mande error, si lo hay, termina abruptamente el programa.
 
 if2:
-		bne	s2,zero,fin_if2		//Si set2 != NULL voy a fin_if2
+		bne	t5,zero,fin_if2		//Si set2 != NULL voy a fin_if2
 		addiu	t0,zero,NCHARS		// t0 = NCHARS
 
 	memset:					// inicializa los elementos de
-						// map1(s0) en 0
-		sw	zero,0(s0)		// *s0 = 0
+						// map1(t3) en 0
+		sw	zero,0(t3)		// *t3 = 0
 		subu	t0,t0,1			// t0 = t0-1
-		addiu	s0,s0,4			// siguiente elemento de map1
+		addiu	t3,t3,4			// siguiente elemento de map1
 		bne	t0,zero,memset
 
-		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
+		lw	t3,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 	while_if2:				// while(*set1)
-		lb	t0,0(s1)		// cargo lo apuntado por s1 en t0
+		lbu	t0,0(t4)		// cargo lo apuntado por t4 en t0
 		beq	t0,zero,fin_setup;	// cuando t0 = 0 termina el while
 		addiu	t1,zero,1		// t1 = 1
 		sll	t0,2			
-		addu	t0,s0,t0		// to = direccion de map[*set1]
+		addu	t0,t3,t0		// to = direccion de map[*set1]
 		sw	t1,0(t0)		// map[*set1] = 1
-		addiu	s1,s1,1			// set1++
+		addiu	t4,t4,1			// set1++
 		j	while_if2
 fin_if2:
-		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
+		lw	t3,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while_2:
-		lb	t0,0(s1)
+		lbu	t0,0(t4)
 		beq	t0,zero,fin_while2
 
-		lb	t1,0(s2)
+		lbu	t1,0(t5)
 		beq	t1,zero,fin_while2
 
 		sll	t0,2
-		addu	t0,s0,t0		// t3 = direccion de MAP[*set1]
+		addu	t0,t3,t0		// t0 = direccion de MAP[*set1]
 		sw	t1,0(t0)		// MAP[*set1] = *SET2
-		addiu	s1,s1,1			// set1++
-		addiu	s2,s2,1			// set2++
+		addiu	t4,t4,1			// set1++
+		addiu	t5,t5,1			// set2++
 		j	while_2	
 
 fin_while2:
 		lw	t1,VAR1($fp)
-		addiu	t2,s2,-1
-		lb	t1,0(t2)
-		lw	s0,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
+		addiu	t2,t5,-1
+		lbu	t1,0(t2)
+		lw	t3,ARG0($fp)		// vuelvo a apuntar al primer elemento de map
 while3:						//while(*set1)
-		lb	t0,0(s1)		// t3 = *SET1
+		lbu	t0,0(t4)		// t0 = *SET1
 		beq	t0,zero,fin_setup;
 
 		sll	t0,t0,2			// multiplo por 4 el contenido
-		addu	t0,s0,t0		// direccion de map[*set1] en t3
+		addu	t0,t3,t0		// direccion de map[*set1] en t0
 		sw	t1,0(t0)		// map[*set1] = lastch
-		addiu	s1,s1,1			// set1++
+		addiu	t4,t4,1			// set1++
 		j	while3
 
 fin_setup:
